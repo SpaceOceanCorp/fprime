@@ -34,6 +34,8 @@ class FaultManagerTester final : public FaultManagerGTestBase {
 
     // Tests
     void testTableLoad();
+    void testGeneratorGoldenTable();
+    void testNameLengthBoundary();
     void testTableRejects();
     void testPersistenceAndResponse();
     void testClearResetsPersistence();

@@ -12,6 +12,8 @@
     }
 
 FM_TEST(Table, testTableLoad)
+FM_TEST(Table, testGeneratorGoldenTable)
+FM_TEST(Table, testNameLengthBoundary)
 FM_TEST(Table, testTableRejects)
 FM_TEST(Table, testReloadBusy)
 FM_TEST(Nominal, testPersistenceAndResponse)

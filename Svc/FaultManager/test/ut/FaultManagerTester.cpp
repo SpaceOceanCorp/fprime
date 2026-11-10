@@ -6,6 +6,7 @@
 #include "FaultManagerTester.hpp"
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include "Os/File.hpp"
 #include "Utils/Hash/Hash.hpp"
 
@@ -115,6 +116,53 @@ void FaultManagerTester ::testTableLoad() {
     ASSERT_CMD_RESPONSE_SIZE(1);
     ASSERT_CMD_RESPONSE(0, FaultManager::OPCODE_TABLE_RELOAD, 7, Fw::CmdResponse::OK);
     ASSERT_EVENTS_TableLoaded_SIZE(1);
+}
+
+void FaultManagerTester ::testGeneratorGoldenTable() {
+    // Output of tools/make_fault_table.py for the standard table (see loadStandardTable), CRC from
+    // Python's zlib.crc32. Matching it byte for byte shows the tool, this file's serializer, and the
+    // component's Utils::Hash CRC-32 agree on the format.
+    static const U8 golden[] = {
+        0x46, 0x4D, 0x54, 0x31, 0x00, 0x04, 0x00, 0x00, 0x00, 0x64, 0x00, 0x03, 0x03, 0x01, 0x00, 0x0B, 0x73,
+        0x65, 0x71, 0x5F, 0x6C, 0x6F, 0x77, 0x2E, 0x62, 0x69, 0x6E, 0x00, 0x00, 0x00, 0xC8, 0x00, 0x01, 0x01,
+        0x05, 0x00, 0x0C, 0x73, 0x65, 0x71, 0x5F, 0x68, 0x69, 0x67, 0x68, 0x2E, 0x62, 0x69, 0x6E, 0x00, 0x00,
+        0x01, 0x2C, 0x01, 0x02, 0x00, 0x00, 0x02, 0x0F, 0x73, 0x65, 0x71, 0x5F, 0x70, 0x61, 0x73, 0x73, 0x69,
+        0x76, 0x65, 0x2E, 0x62, 0x69, 0x6E, 0x00, 0x00, 0x01, 0x90, 0x02, 0x01, 0x00, 0x00, 0x00, 0x0B, 0x73,
+        0x65, 0x71, 0x5F, 0x6F, 0x66, 0x66, 0x2E, 0x62, 0x69, 0x6E, 0x9D, 0x19, 0x6C, 0xA7,
+    };
+    const std::vector<U8> goldenBytes(golden, golden + sizeof(golden));
+    const U8 latchClear = FaultManager::FLAG_LATCH | FaultManager::FLAG_CLEAR_ON_SUCCESS;
+    const std::vector<U8> built = makeTable({
+        {100, FaultState::ACTIVE, 3, latchClear, 1, 0, "seq_low.bin"},
+        {200, FaultState::ACTIVE, 1, FaultManager::FLAG_LATCH, 5, 0, "seq_high.bin"},
+        {300, FaultState::PASSIVE, 2, 0, 0, 2, "seq_passive.bin"},
+        {400, FaultState::DISABLED, 1, 0, 0, 0, "seq_off.bin"},
+    });
+    ASSERT_EQ(built, goldenBytes);
+
+    writeFile(TABLE_FILE, goldenBytes);
+    ASSERT_TRUE(this->component.configure(TABLE_FILE));
+    ASSERT_EVENTS_TableLoaded_SIZE(1);
+    ASSERT_EVENTS_TableLoaded(0, TABLE_FILE, 4);
+    // Fault 100 needs 3 consecutive announcements before its response runs
+    this->clearHistory();
+    this->announce(100, 3);
+    ASSERT_from_seqRunOut_SIZE(1);
+}
+
+void FaultManagerTester ::testNameLengthBoundary() {
+    // The longest accepted sequence name is FileNameStringSize - 1 bytes
+    const std::string longest(FileNameStringSize - 1, 's');
+    writeFile(TABLE_FILE, makeTable({{1, FaultState::ACTIVE, 1, 0, 0, 0, longest.c_str()}}));
+    ASSERT_TRUE(this->component.configure(TABLE_FILE));
+    ASSERT_EVENTS_TableLoaded_SIZE(1);
+    this->clearHistory();
+
+    const std::string tooLong(FileNameStringSize, 's');
+    writeFile(TABLE_FILE, makeTable({{1, FaultState::ACTIVE, 1, 0, 0, 0, tooLong.c_str()}}));
+    ASSERT_FALSE(this->component.configure(TABLE_FILE));
+    ASSERT_EVENTS_TableRejected_SIZE(1);
+    ASSERT_EVENTS_TableRejected(0, TABLE_FILE, FaultTableError::BAD_ENTRY);
 }
 
 void FaultManagerTester ::testTableRejects() {

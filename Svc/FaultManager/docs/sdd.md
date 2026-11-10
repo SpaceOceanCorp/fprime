@@ -72,6 +72,8 @@ Each entry:
 
 A table is rejected (`TableRejected`, with reason) if it cannot be read, has the wrong size or magic, has more than `MaxFaults` entries, fails the CRC, has an invalid entry, or repeats a fault ID.
 
+`Svc/FaultManager/tools/make_fault_table.py table.json fault_table.bin` builds a table file from a JSON list of entries. Its CRC is `zlib.crc32`, the same CRC-32 as `Utils::Hash`; a unit test loads the tool's output byte for byte.
+
 ## 5. Behavior
 
 On an announcement for a fault that is not DISABLED, the total count is incremented. If the fault is not latched, its consecutive count is incremented, and when the count reaches the persistence value the fault is declared and the count goes back to 0.
@@ -106,12 +108,14 @@ Telemetry: `ActiveResponseFault`, `LastDeclaredFault`, `DeclarationCount`, `Resp
 
 | Test | Requirements |
 |---|---|
-| `testTableLoad`, `testTableRejects`, `testReloadBusy` | 003, 014 |
+| `testTableLoad`, `testTableRejects`, `testStructuralRejects`, `testReloadBusy` | 003, 014 |
+| `testFullTable`, `testOversizeFile`, `testNameLengthBoundary`, `testGeneratorGoldenTable` | 003, 014 |
 | `testPersistenceAndResponse` | 001, 005, 006 |
 | `testClearResetsPersistence` | 002 |
-| `testPassiveAndDisabled`, `testSetStateCommand` | 004, 012 |
+| `testPassiveAndDisabled`, `testSetStateCommand`, `testSetStateDropsQueued` | 004, 012 |
 | `testLatchAndReset`, `testClearOnSuccess`, `testResponseFailureKeepsLatch` | 008, 009, 012 |
-| `testPriorityPreemption`, `testLowerPriorityQueued` | 007 |
+| `testPriorityPreemption`, `testLowerPriorityQueued`, `testPreemptWhileCancelPending`, `testRedeclareWhileRunning` | 007 |
+| `testTelemetryTable` | 013 |
 | `testInhibit` | 006, 012 |
 | `testEventLimit` | 010 |
 | `testUnknownFault` | 011 |

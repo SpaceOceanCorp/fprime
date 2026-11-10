@@ -18,7 +18,7 @@ Tracks versions for framework,project, libraries and user defined project specif
 |SVC-VERSION-010|`Svc::Version` shall provide a telemetry channel on framework version| Accessibility to versions being used|
 |SVC-VERSION-011|`Svc::Version` shall provide a telemetry channel on project version| Accessibility to versions being used|
 |SVC-VERSION-012|`Svc::Version` shall provide upto 10 telemetry channels on library versions| Accessibility to versions being used|
-|SVC-VERSION-013|`Svc::Version` shall provide upto 10 telemetry channels on custom versions| Accessibility to versions being used. Only accessible if verbosity is enabled|
+|SVC-VERSION-013|`Svc::Version` shall provide upto 10 telemetry channels on custom versions| Accessibility to versions being used. Only accessible if verbosity is enabled. Projects may define up to 32 custom versions; versions past the tenth are reported by event only|
 |SVC-VERSION-014|`Svc::Version` shall provide an interface for other components to set custom versions.| Enables projects to set hardware and FPGA versions, say, as needed. Also generates Events/TLM based on verbosity configuration|
 |SVC-VERSION-015|`Svc::Version` shall provide an interface for other components to get custom versions.| Also generates Events/TLM based on verbosity configuration|
 |SVC-VERSION-016|`Svc::Version` shall provide a scheduled input port that periodically re-emits the framework, project and library version telemetry channels, and the populated custom version telemetry channels when verbosity is enabled, without generating events.| Allows ground systems that connect after startup, or that miss the one-shot telemetry write, to receive version telemetry periodically without flooding the event log|

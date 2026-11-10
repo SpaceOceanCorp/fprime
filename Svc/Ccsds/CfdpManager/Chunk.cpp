@@ -291,7 +291,10 @@ void CfdpChunkList::insert(ChunkIdx i, const Chunk* chunk) {
             } else {
                 smallest_i = findSmallestSize();
                 smallest_c = &m_chunks[smallest_i];
-                if (smallest_c->size < chunk->size) {
+                // A chunk past every tracked chunk is the leading edge of a sequential transfer:
+                // later data extends it. Dropping it would leave all later data untracked (and
+                // requested again), so keep it at the cost of the smallest tracked chunk.
+                if ((smallest_c->size < chunk->size) || (i == m_count)) {
                     eraseChunk(smallest_i);
                     insertChunk(findInsertPosition(chunk), chunk);
                 }

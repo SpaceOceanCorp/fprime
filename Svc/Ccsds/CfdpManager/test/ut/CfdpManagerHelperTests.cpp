@@ -586,6 +586,47 @@ TEST(ChunkHelper, AddZeroSizeChunkIgnored) {
     EXPECT_EQ(1U, chunks.getCount());
 }
 
+TEST(ChunkHelper, FullListKeepsLeadingEdgeChunk) {
+    // Issue #6131: once the list is full, a chunk past every tracked chunk is the start of the
+    // data that follows a new gap. It must be tracked (evicting the smallest tracked chunk) so
+    // that later contiguous data extends it instead of being dropped.
+    Chunk chunkMem[3];
+    CfdpChunkList chunks(3, chunkMem);
+    chunks.add(0, 100);
+    chunks.add(200, 50);
+    chunks.add(300, 100);
+    ASSERT_EQ(3U, chunks.getCount());
+
+    // New single-PDU chunk after a gap, smaller than every tracked chunk
+    chunks.add(500, 10);
+    ASSERT_EQ(3U, chunks.getCount());
+    // The smallest chunk (200, 50) was evicted; the leading edge is tracked
+    EXPECT_EQ(0U, chunkMem[0].offset);
+    EXPECT_EQ(300U, chunkMem[1].offset);
+    EXPECT_EQ(500U, chunkMem[2].offset);
+    EXPECT_EQ(10U, chunkMem[2].size);
+
+    // Contiguous data extends the leading edge
+    chunks.add(510, 10);
+    EXPECT_EQ(3U, chunks.getCount());
+    EXPECT_EQ(20U, chunkMem[2].size);
+}
+
+TEST(ChunkHelper, FullListStillDropsSmallMiddleChunk) {
+    // A chunk inside the tracked range keeps the previous rule: it replaces the smallest chunk
+    // only when it is larger.
+    Chunk chunkMem[3];
+    CfdpChunkList chunks(3, chunkMem);
+    chunks.add(0, 100);
+    chunks.add(200, 50);
+    chunks.add(300, 100);
+
+    chunks.add(150, 10);
+    ASSERT_EQ(3U, chunks.getCount());
+    EXPECT_EQ(200U, chunkMem[1].offset);
+    EXPECT_EQ(50U, chunkMem[1].size);
+}
+
 TEST(FileDataPduHelper, TruncatedOffsetRejected) {
     // A PDU truncated in the middle of the file offset must be rejected rather than
     // leaving a stale offset behind

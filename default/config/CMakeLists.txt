@@ -16,6 +16,7 @@ register_fprime_config(
         "${CMAKE_CURRENT_LIST_DIR}/FpConfig.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FpConstants.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FprimeRouterCfg.fpp"
+        "${CMAKE_CURRENT_LIST_DIR}/FaultManagerCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FileManagerCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FpySequencerCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/GenericHubCfg.fpp"

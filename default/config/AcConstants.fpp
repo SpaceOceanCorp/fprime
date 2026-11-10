@@ -21,6 +21,9 @@ constant CmdDispatcherSequencePorts = 5
 @ Used for dispatching sequences to command sequencers
 constant SeqDispatcherSequencerPorts = 2
 
+@ Number of fault announcement and fault clear input ports on Svc::FaultManager
+constant FaultManagerAnnouncePorts = 8
+
 @ Used for sizing the command splitter input arrays
 constant CmdSplitterPorts = CmdDispatcherSequencePorts
 
